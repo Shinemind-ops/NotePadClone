@@ -12,13 +12,32 @@ namespace NotePadClone.DocumentModel;
 public class Document : ObservableObject, IDocument
 {
     private string _content = string.Empty;
+    private string _savedContent = string.Empty;
 
-    public Document() { }
+    public Document()
+    {
+        Metadata.TitleChanged += (_, _) => OnPropertyChanged(nameof(DisplayName));
+    }
     public Document(string? filePath, string content)
     {
         Content = content;
         Metadata.FilePath = filePath;
         Metadata.Update(Content);
+        _savedContent = content;
+    }
+
+    /// <inheritdoc />
+    public bool IsDirty => Content != _savedContent;
+
+    /// <inheritdoc />
+    public string DisplayName => Metadata.Title + (IsDirty ? " •" : string.Empty);
+
+    /// <inheritdoc />
+    public void MarkSaved()
+    {
+        _savedContent = Content;
+        OnPropertyChanged(nameof(IsDirty));
+        OnPropertyChanged(nameof(DisplayName));
     }
     public DocumentMetadata Metadata { get; } = new();
 
@@ -31,6 +50,8 @@ public class Document : ObservableObject, IDocument
                 return;
 
             Metadata.Update(Content);
+            OnPropertyChanged(nameof(IsDirty));
+            OnPropertyChanged(nameof(DisplayName));
         }
     }
 }

@@ -52,10 +52,10 @@ public class MainWindowVm : WindowVm
     public DelegateCommand SaveDocumentAsCommand { get; }
     public DelegateCommand SaveOpenDocumentsCommand { get; }
 
-    // ===== mod additions =====
+    // ===== 魔改新增 =====
 
     private TextWrapping _wordWrapMode = TextWrapping.Wrap;
-    /// <summary>Word-wrap toggle (default on, matching Win11 Notepad). Bound to the editor TextBox.TextWrapping.</summary>
+    /// <summary>自動換行開關（默認開，與 Win11 記事本一致）。綁定到編輯区 TextBox.TextWrapping。</summary>
     public TextWrapping WordWrapMode
     {
         get => _wordWrapMode;
@@ -73,7 +73,7 @@ public class MainWindowVm : WindowVm
     }
 
     private bool _showPathBar;
-    /// <summary>Visibility of the file path bar at the top.</summary>
+    /// <summary>頂部文件路徑欄可見與否。</summary>
     public bool ShowPathBar
     {
         get => _showPathBar;
@@ -97,7 +97,7 @@ public class MainWindowVm : WindowVm
         CopyPathCommand = new DelegateCommand(_ => CopyPathToClipboard());
     }
 
-    /// <summary>mod: copy the full path of the current tab's file to the clipboard.</summary>
+    /// <summary>魔改新增：把當前分頁文件嘅完整路徑複製到剪貼簿。</summary>
     private void CopyPathToClipboard()
     {
         var path = SelectedDocument?.Metadata.FilePath;
@@ -114,18 +114,69 @@ public class MainWindowVm : WindowVm
 
         if (document is not IDocument doc) throw new ArgumentException("The document must be of type IDocument.", nameof(document));
 
-        switch (Documents.Count)
+        // mod: closing the last tab closes the window; the window's Closing handler
+        // already asks about unsaved changes, so don't prompt twice here.
+        if (Documents.Count <= 1)
         {
-            case 1:
-                CloseWindowCommand.Execute(null);
-                break;
-
-            default:
-                var index = Documents.IndexOf(doc);
-                Documents.Remove(doc);
-                SelectedDocument = Documents[Math.Min(index, Documents.Count - 1)];
-                break;
+            CloseWindowCommand.Execute(null);
+            return;
         }
+
+        // mod: ask before discarding unsaved changes (returns false = user cancelled).
+        if (!ConfirmDiscardDocument(doc))
+            return;
+
+        var index = Documents.IndexOf(doc);
+        Documents.Remove(doc);
+        SelectedDocument = Documents[Math.Min(index, Documents.Count - 1)];
+    }
+
+    /// <summary>
+    /// mod: asks the user to save/discard a document that has unsaved changes.
+    /// </summary>
+    /// <returns>True if the document may be closed, false if the user cancelled.</returns>
+    public bool ConfirmDiscardDocument(IDocument document)
+    {
+        if (!document.IsDirty)
+            return true;
+
+        var name = string.IsNullOrEmpty(document.Metadata.FilePath) ? document.Metadata.Title : Path.GetFileName(document.Metadata.FilePath);
+        var result = MessageBox.Show(
+            $"\"{name}\" has unsaved changes.\n\nDo you want to save before closing?",
+            "NotePad Clone",
+            MessageBoxButton.YesNoCancel,
+            MessageBoxImage.Warning,
+            MessageBoxResult.Yes);
+
+        switch (result)
+        {
+            case MessageBoxResult.Yes:
+                SaveDocument(document);
+                // If the Save-As dialog was cancelled the document is still dirty -> treat as cancel.
+                return !document.IsDirty;
+
+            case MessageBoxResult.No:
+                return true;
+
+            default: // Cancel or dialog closed
+                return false;
+        }
+    }
+
+    /// <summary>
+    /// mod: asks about every dirty document before the window closes.
+    /// </summary>
+    /// <returns>True if the window may close, false if the user cancelled.</returns>
+    public bool ConfirmCloseWindow()
+    {
+        // Snapshot: the list may change while dialogs are open.
+        foreach (var document in Documents.ToList())
+        {
+            if (!ConfirmDiscardDocument(document))
+                return false;
+        }
+
+        return true;
     }
 
     private void OpenNewTab()
