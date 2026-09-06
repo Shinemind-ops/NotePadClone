@@ -1,4 +1,4 @@
-﻿<Window x:Class="NotePadClone.MainWindow"
+<Window x:Class="NotePadClone.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -23,6 +23,7 @@
     <Window.Resources>
         <valueConverter:FileSizeConverter x:Key="FileSizeConverter" />
         <valueConverter:IntToStringConverter x:Key="IntToStringConverter" />
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
     </Window.Resources>
 
     <Window.InputBindings>
@@ -62,6 +63,7 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />     <!-- Menu Bar Row -->
+            <RowDefinition Height="Auto" />     <!-- File Path Bar Row (mod addition) -->
             <RowDefinition Height="*" />        <!-- Text Editor Area Row -->
             <RowDefinition Height="Auto" />     <!-- Status Bar Row -->
         </Grid.RowDefinitions>
@@ -69,8 +71,35 @@
         <!--Menu Bar-->
         <controls:MenuBarControl Grid.Row="0" />
 
+        <!-- File Path Bar (mod): shows the full path of the current tab, with a copy button -->
+        <DockPanel Grid.Row="1"
+                   Margin="10,2,10,2"
+                   Visibility="{Binding ShowPathBar, Converter={StaticResource BoolToVis}}">
+
+            <Button DockPanel.Dock="Right"
+                    Content="Copy"
+                    Height="Auto"
+                    Padding="8,0"
+                    Margin="5,0,0,0"
+                    Command="{Binding CopyPathCommand}"
+                    ToolTip="Copy file path to clipboard"
+                    Style="{StaticResource MaterialDesignToolButton}" />
+
+            <TextBlock DockPanel.Dock="Left"
+                       Text="Path:"
+                       VerticalAlignment="Center"
+                       Margin="0,0,6,0"
+                       Opacity="0.7" />
+
+            <TextBox IsReadOnly="True"
+                     BorderThickness="0"
+                     Background="Transparent"
+                     VerticalAlignment="Center"
+                     Text="{Binding SelectedDocument.Metadata.FilePath, TargetNullValue='(Untitled — not saved yet)'}" />
+        </DockPanel>
+
         <!-- Text Editor Area -->
-        <TabControl Grid.Row="1"
+        <TabControl Grid.Row="2"
                     ItemsSource="{Binding Documents}"
                     SelectedItem="{Binding SelectedDocument}">
             
@@ -98,6 +127,7 @@
                 <DataTemplate>
                     <TextBox AcceptsReturn="True"
                              AcceptsTab="True"
+                             TextWrapping="{Binding DataContext.WordWrapMode, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
                              VerticalScrollBarVisibility="Auto"
                              HorizontalScrollBarVisibility="Auto"
                              FontFamily="Consolas"
@@ -109,7 +139,7 @@
         </TabControl>
 
         <!--Status Bar-->
-        <controls:StatusBarControl Grid.Row="2"
+        <controls:StatusBarControl Grid.Row="3"
                                    HorizontalAlignment="Right"
                                    VerticalAlignment="Center"
                                    Margin="5" />

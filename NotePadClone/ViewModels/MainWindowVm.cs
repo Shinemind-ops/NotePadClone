@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -52,6 +52,36 @@ public class MainWindowVm : WindowVm
     public DelegateCommand SaveDocumentAsCommand { get; }
     public DelegateCommand SaveOpenDocumentsCommand { get; }
 
+    // ===== mod additions =====
+
+    private TextWrapping _wordWrapMode = TextWrapping.Wrap;
+    /// <summary>Word-wrap toggle (default on, matching Win11 Notepad). Bound to the editor TextBox.TextWrapping.</summary>
+    public TextWrapping WordWrapMode
+    {
+        get => _wordWrapMode;
+        set => SetField(ref _wordWrapMode, value);
+    }
+
+    public bool WordWrapEnabled
+    {
+        get => _wordWrapMode == TextWrapping.Wrap;
+        set
+        {
+            WordWrapMode = value ? TextWrapping.Wrap : TextWrapping.NoWrap;
+            OnPropertyChanged(nameof(WordWrapEnabled));
+        }
+    }
+
+    private bool _showPathBar;
+    /// <summary>Visibility of the file path bar at the top.</summary>
+    public bool ShowPathBar
+    {
+        get => _showPathBar;
+        set => SetField(ref _showPathBar, value);
+    }
+
+    public DelegateCommand CopyPathCommand { get; }
+
     public MainWindowVm(IWindowService windowService, IDocumentService documentService) : base(windowService)
     {
         _documentService = documentService;
@@ -64,6 +94,17 @@ public class MainWindowVm : WindowVm
         SaveDocumentCommand = new DelegateCommand(_ => SaveDocument(SelectedDocument));
         SaveDocumentAsCommand = new DelegateCommand(_ => SaveDocumentAs(SelectedDocument));
         SaveOpenDocumentsCommand = new DelegateCommand(_ => SaveOpenDocuments());
+        CopyPathCommand = new DelegateCommand(_ => CopyPathToClipboard());
+    }
+
+    /// <summary>mod: copy the full path of the current tab's file to the clipboard.</summary>
+    private void CopyPathToClipboard()
+    {
+        var path = SelectedDocument?.Metadata.FilePath;
+        if (!string.IsNullOrEmpty(path))
+        {
+            Clipboard.SetText(path);
+        }
     }
        
 

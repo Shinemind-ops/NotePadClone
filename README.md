@@ -53,3 +53,19 @@ Notepad Clone is a modern reimagining of the classic Windows Notepad application
 
 ## License
 This project is licensed under the GPL-3.0 License - see the [LICENSE](LICENSE.txt) file for details.
+
+---
+
+## Modifications in this fork (notepad-mods branch)
+
+This fork adds two small quality-of-life features that the upstream project left out, both accessible from a new **View** menu:
+
+| Feature | Behaviour |
+|---|---|
+| **Word wrap** (toggle, default on) | Matches Windows 11 Notepad: long lines wrap inside the editor instead of forcing horizontal scrolling. Toggleable at runtime. Implemented by binding the editor `TextBox.TextWrapping` to a new `WordWrapMode` property in `MainWindowVm`. |
+| **File path bar** | A slim bar under the menu showing the full path of the current tab, with a one-click **Copy** button (copies the path to clipboard). Useful when working with files opened from scripts/downloads. Bound to `ShowPathBar` / `CopyPathCommand`. |
+
+Maintenance notes:
+- The original `WpfEssentials` package reference pointed at a repository that is now gone (404). This fork replaces it with a minimal local shim (`NotePadClone/WpfEssentialsShim.cs`) re-implementing only the two classes actually used (`ObservableObject`, `DelegateCommand`), with equivalent behaviour.
+- Built and tested against .NET 8 WPF (`dotnet build -c Release`, 0 warnings / 0 errors).
+- `main` branch tracks upstream; the changes live on the `notepad-mods` branch.

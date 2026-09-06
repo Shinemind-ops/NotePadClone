@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -24,10 +24,6 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Reference Include="WpfEssentials">
-      <HintPath>..\..\WpfEssentials\WpfEssentials\bin\Debug\net8.0-windows\WpfEssentials.dll</HintPath>
-    </Reference>
-  </ItemGroup>
+  <!-- Original WpfEssentials package reference removed (author repo 404); replaced by local WpfEssentialsShim.cs -->
 
 </Project>

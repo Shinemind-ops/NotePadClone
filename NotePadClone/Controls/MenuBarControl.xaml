@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="NotePadClone.Controls.MenuBarControl"
+<UserControl x:Class="NotePadClone.Controls.MenuBarControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -46,6 +46,16 @@
 
             <MenuItem Command="{Binding ExitApplicationCommand}"
                       Header="E_xit" />
+        </MenuItem>
+        <!-- mod addition: View menu -->
+        <MenuItem Header="_View">
+            <MenuItem Header="_Word wrap"
+                      IsCheckable="True"
+                      IsChecked="{Binding WordWrapEnabled, Mode=TwoWay}" />
+
+            <MenuItem Header="Show file _path bar"
+                      IsCheckable="True"
+                      IsChecked="{Binding ShowPathBar, Mode=TwoWay}" />
         </MenuItem>
         <!-- Additional Menu Items Here -->
     </Menu>
