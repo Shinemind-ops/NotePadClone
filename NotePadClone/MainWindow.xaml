@@ -10,7 +10,7 @@
         xmlns:valueConverter="clr-namespace:NotePadClone.ValueConverters"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=viewModels:MainWindowVm, IsDesignTimeCreatable=False}"
-        Title="NotePad Clone"
+        Title="記事本"
         Height="450"
         Width="800"
         TextElement.Foreground="{DynamicResource MaterialDesignBody}"
@@ -18,11 +18,14 @@
         TextElement.FontSize="14"
         FontFamily="{materialDesign:MaterialDesignFont}"
         Style="{StaticResource MaterialDesignWindowChrome}"
-        Loaded="OnLoaded">
+        Loaded="OnLoaded"
+        CommandManager.PreviewExecuted="OnPreviewExecuted">
 
     <Window.Resources>
         <valueConverter:FileSizeConverter x:Key="FileSizeConverter" />
         <valueConverter:IntToStringConverter x:Key="IntToStringConverter" />
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <valueConverter:InverseBooleanToVisibilityConverter x:Key="InverseBoolToVis" />
     </Window.Resources>
 
     <Window.InputBindings>
@@ -62,6 +65,7 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />     <!-- Menu Bar Row -->
+            <RowDefinition Height="Auto" />     <!-- File Path Bar Row (mod addition) -->
             <RowDefinition Height="*" />        <!-- Text Editor Area Row -->
             <RowDefinition Height="Auto" />     <!-- Status Bar Row -->
         </Grid.RowDefinitions>
@@ -69,47 +73,244 @@
         <!--Menu Bar-->
         <controls:MenuBarControl Grid.Row="0" />
 
-        <!-- Text Editor Area -->
-        <TabControl Grid.Row="1"
-                    ItemsSource="{Binding Documents}"
-                    SelectedItem="{Binding SelectedDocument}">
-            
-            <TabControl.ItemTemplate>
-                <DataTemplate>
-                    <StackPanel Orientation="Horizontal" 
-                                MaxWidth="300">
-                        
-                        <TextBlock Text="{Binding Metadata.Title}"
-                                   VerticalAlignment="Center"/>
+        <!-- File Path Bar (mod addition): shows the full path of the current tab, copyable -->
+        <DockPanel Grid.Row="1"
+                   Margin="10,2,10,2"
+                   Visibility="{Binding ShowPathBar, Converter={StaticResource BoolToVis}}">
 
-                        <Button Height="Auto"
-                                VerticalAlignment="Center"
-                                Command="{Binding DataContext.CloseTabCommand, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
-                                CommandParameter="{Binding}"
-                                Style="{StaticResource MaterialDesignToolButton}">
-                            
-                            <materialDesign:PackIcon Kind="Close" />
-                        </Button>
-                    </StackPanel>
-                </DataTemplate>
-            </TabControl.ItemTemplate>
-            
-            <TabControl.ContentTemplate>
-                <DataTemplate>
-                    <TextBox AcceptsReturn="True"
-                             AcceptsTab="True"
-                             VerticalScrollBarVisibility="Auto"
-                             HorizontalScrollBarVisibility="Auto"
-                             FontFamily="Consolas"
-                             Padding="15"
-                             Background="{StaticResource MaterialDesignDarkSeparatorBackground}"
-                             Text="{Binding Content, UpdateSourceTrigger=PropertyChanged}" />
-                </DataTemplate>
-            </TabControl.ContentTemplate>
-        </TabControl>
+            <Button DockPanel.Dock="Right"
+                    Content="複製"
+                    Height="Auto"
+                    Padding="8,0"
+                    Margin="5,0,0,0"
+                    Command="{Binding CopyPathCommand}"
+                    ToolTip="複製檔案路徑到剪貼簿"
+                    Style="{StaticResource MaterialDesignToolButton}" />
+
+            <TextBlock DockPanel.Dock="Left"
+                       Text="路徑:"
+                       VerticalAlignment="Center"
+                       Margin="0,0,6,0"
+                       Opacity="0.7" />
+
+            <TextBox IsReadOnly="True"
+                     BorderThickness="0"
+                     Background="Transparent"
+                     VerticalAlignment="Center"
+                     Text="{Binding SelectedDocument.Metadata.FilePath, TargetNullValue='(未命名 — 尚未儲存)'}" />
+        </DockPanel>
+
+        <!-- v1.2 mod: left file-tree sidebar + editor area -->
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition x:Name="SidebarColumn" Width="220" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Sidebar: when hidden Visible=Collapsed (content size becomes 0), and code-behind also sets the column width to 0,
+                 so the editor area fully restores the v1.1 layout -->
+            <Border x:Name="ExplorerSidebarHost"
+                    Grid.Column="0"
+                    Visibility="{Binding ShowSidePanel, Converter={StaticResource BoolToVis}}"
+                    BorderBrush="#33000000"
+                    BorderThickness="0,0,1,0">
+
+                <DockPanel>
+                    <!-- v1.2.1: top path row + "Open Folder..." button — the user can manually lock the root directory -->
+                    <Border DockPanel.Dock="Top"
+                            Padding="10,7"
+                            Background="{StaticResource MaterialDesignDarkSeparatorBackground}">
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right"
+                                    Content="開啟資料夾…"
+                                    Command="{Binding OpenFolderCommand}"
+                                    Height="Auto"
+                                    Padding="6,1"
+                                    Margin="6,0,0,0"
+                                    FontSize="11"
+                                    ToolTip="手動指定文件列表的根資料夾"
+                                    Style="{StaticResource MaterialDesignToolButton}" />
+
+                            <TextBlock Text="{Binding ExplorerRootPath}"
+                                       FontSize="11"
+                                       Opacity="0.75"
+                                       VerticalAlignment="Center"
+                                       TextTrimming="CharacterEllipsis"
+                                       ToolTip="{Binding ExplorerRootPath}" />
+                        </DockPanel>
+                    </Border>
+
+                    <TreeView x:Name="ExplorerTree"
+                              ItemsSource="{Binding ExplorerRootItems}"
+                              Background="Transparent"
+                              BorderThickness="0"
+                              Padding="2"
+                              VirtualizingStackPanel.IsVirtualizing="True"
+                              VirtualizingStackPanel.VirtualizationMode="Recycling"
+                              SelectedItemChanged="OnExplorerTreeSelectedItemChanged">
+
+                        <TreeView.ItemContainerStyle>
+                            <Style TargetType="TreeViewItem">
+                                <Setter Property="IsExpanded"
+                                        Value="{Binding IsExpanded, Mode=TwoWay}" />
+                                <!-- v1.2.1 StackOverflow fix: IsSelected must be OneWay only.
+                                     Lifecycle: TreeViewItem.Select→ChangeSelection→SetValue(IsSelected)
+                                     →TwoWay binding writes back to the source→source PropertyChanged→binding writes again
+                                     →OnIsSelectedChanged→Select… infinite loop kills the UI thread (0xC0000409).
+                                     OneWay stops WPF's internal selection state from writing back to the VM source, breaking the loop. -->
+                                <Setter Property="IsSelected"
+                                        Value="{Binding IsSelected, Mode=OneWay}" />
+                                <Setter Property="AutomationProperties.Name"
+                                        Value="{Binding Name}" />
+                            </Style>
+                        </TreeView.ItemContainerStyle>
+
+                        <TreeView.ItemTemplate>
+                            <HierarchicalDataTemplate ItemsSource="{Binding Children}">
+                                <!-- v1.2.1 context menu. Note: must NOT live in the ItemContainerStyle's Setter.Value —
+                                     WPF XAML codegen writes elements with Click handlers inside a Style into the main namescope's
+                                     connectionId table, corrupting x:Name field bindings (real case in errors.log:
+                                     Unable to cast MenuItem to GridSplitter). Inside a DataTemplate
+                                     it gets its own namescope, so it can't collide with window-level x:Name.
+                                     Menu-item Click uses event handlers (code-behind gets the node from DataContext). -->
+                                <StackPanel Orientation="Horizontal">
+                                    <StackPanel.ContextMenu>
+                                        <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                                            <MenuItem Header="重新整理"
+                                                      Click="OnExplorerRefreshClick" />
+                                            <MenuItem Header="在檔案總管中開啟"
+                                                      Click="OnExplorerOpenInExplorerClick" />
+                                            <MenuItem Header="設為根目錄"
+                                                      Click="OnExplorerSetRootClick"
+                                                      Visibility="{Binding IsDirectory, Converter={StaticResource BoolToVis}}" />
+                                            <MenuItem Header="刪除"
+                                                      Click="OnExplorerDeleteClick"
+                                                      Visibility="{Binding IsDirectory, Converter={StaticResource InverseBoolToVis}}" />
+                                        </ContextMenu>
+                                    </StackPanel.ContextMenu>
+                                    <materialDesign:PackIcon Kind="Folder"
+                                                             Width="16"
+                                                             Height="16"
+                                                             VerticalAlignment="Center"
+                                                             Margin="0,0,4,0"
+                                                             Foreground="#FF90A4AE"
+                                                             Visibility="{Binding IsDirectory, Converter={StaticResource BoolToVis}}" />
+                                    <materialDesign:PackIcon Kind="FileOutline"
+                                                             Width="16"
+                                                             Height="16"
+                                                             VerticalAlignment="Center"
+                                                             Margin="0,0,4,0"
+                                                             Foreground="#FFB0BEC5"
+                                                             Visibility="{Binding IsDirectory, Converter={StaticResource InverseBoolToVis}}" />
+                                    <TextBlock Text="{Binding Name}"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                            </HierarchicalDataTemplate>
+                        </TreeView.ItemTemplate>
+                    </TreeView>
+                </DockPanel>
+            </Border>
+
+            <!-- Sidebar splitter: drag to resize the sidebar -->
+            <GridSplitter x:Name="ExplorerSplitter"
+                          Grid.Column="0"
+                          Width="5"
+                          HorizontalAlignment="Right"
+                          VerticalAlignment="Stretch"
+                          Background="Transparent"
+                          ResizeBehavior="PreviousAndNext"
+                          Visibility="{Binding ShowSidePanel, Converter={StaticResource BoolToVis}}"
+                          DragCompleted="OnExplorerSplitterDragCompleted" />
+
+            <!-- Text Editor Area -->
+            <TabControl Grid.Column="1"
+                        ItemsSource="{Binding Documents}"
+                        SelectedItem="{Binding SelectedDocument}"
+                        HorizontalContentAlignment="Left"
+                        AllowDrop="True"
+                        PreviewMouseLeftButtonDown="OnTabControlPreviewMouseLeftButtonDown"
+                        MouseMove="OnTabControlMouseMove"
+                        Drop="OnTabControlDrop">
+
+                <TabControl.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal"
+                                    MaxWidth="300">
+
+                            <TextBlock Text="{Binding DisplayName}"
+                                       VerticalAlignment="Center" />
+
+                            <Button Height="Auto"
+                                    VerticalAlignment="Center"
+                                    Command="{Binding DataContext.CloseTabCommand, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
+                                    CommandParameter="{Binding}"
+                                    Style="{StaticResource MaterialDesignToolButton}">
+
+                                <materialDesign:PackIcon Kind="Close" />
+                            </Button>
+                        </StackPanel>
+                    </DataTemplate>
+                </TabControl.ItemTemplate>
+
+                <TabControl.ContentTemplate>
+                    <DataTemplate>
+                        <!-- v1.2 mod: editor (TextBox) and Markdown browse view (FlowDocumentScrollViewer) stacked,
+                             the document's IsBrowseMode decides which one shows; the hidden one is excluded from layout, zero content loss.
+                             v1.3 mod: line-number gutter on the left (separate Grid column, horizontal scroll doesn't drag it away;
+                             auto-hidden in browse mode). -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <controls:LineNumberMargin Grid.Column="0"
+                                                       EditorBox="{Binding ElementName=EditorBox}"
+                                                       ShowLineNumbers="{Binding DataContext.ShowLineNumbers, RelativeSource={RelativeSource AncestorType={x:Type Window}}}">
+                                <controls:LineNumberMargin.Style>
+                                    <Style TargetType="controls:LineNumberMargin">
+                                        <Setter Property="Visibility"
+                                                Value="{Binding ShowLineNumbers, RelativeSource={RelativeSource Self}, Converter={StaticResource BoolToVis}}" />
+                                        <Style.Triggers>
+                                            <!-- v1.3: auto-hidden in MD browse mode, auto-restored when switching back to edit mode -->
+                                            <DataTrigger Binding="{Binding IsBrowseMode}"
+                                                         Value="True">
+                                                <Setter Property="Visibility"
+                                                        Value="Collapsed" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </controls:LineNumberMargin.Style>
+                            </controls:LineNumberMargin>
+
+                            <TextBox x:Name="EditorBox"
+                                     Grid.Column="1"
+                                     AcceptsReturn="True"
+                                     AcceptsTab="True"
+                                     TextWrapping="{Binding DataContext.WordWrapMode, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
+                                     VerticalScrollBarVisibility="Auto"
+                                     HorizontalScrollBarVisibility="Auto"
+                                     FontFamily="Consolas"
+                                     Padding="15"
+                                     Background="{StaticResource MaterialDesignDarkSeparatorBackground}"
+                                     Text="{Binding Content, UpdateSourceTrigger=PropertyChanged}"
+                                     Visibility="{Binding IsBrowseMode, Converter={StaticResource InverseBoolToVis}}" />
+
+                            <FlowDocumentScrollViewer Grid.Column="1"
+                                                      Visibility="{Binding IsBrowseMode, Converter={StaticResource BoolToVis}}"
+                                                      Document="{Binding PreviewDocument}"
+                                                      IsToolBarVisible="False"
+                                                      VerticalScrollBarVisibility="Auto"
+                                                      HorizontalScrollBarVisibility="Auto"
+                                                      Background="{StaticResource MaterialDesignDarkSeparatorBackground}" />
+                        </Grid>
+                    </DataTemplate>
+                </TabControl.ContentTemplate>
+            </TabControl>
+        </Grid>
 
         <!--Status Bar-->
-        <controls:StatusBarControl Grid.Row="2"
+        <controls:StatusBarControl Grid.Row="3"
                                    HorizontalAlignment="Right"
                                    VerticalAlignment="Center"
                                    Margin="5" />

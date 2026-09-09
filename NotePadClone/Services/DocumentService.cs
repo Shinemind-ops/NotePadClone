@@ -31,6 +31,7 @@ public class DocumentService : IDocumentService
 
         document.Metadata.FilePath = filePath;
         File.WriteAllText(filePath, document.Content);
+        document.MarkSaved();
     }
 
     public void Save(IDocument document)
@@ -39,6 +40,7 @@ public class DocumentService : IDocumentService
             return;
 
         File.WriteAllText(document.Metadata.FilePath, document.Content);
+        document.MarkSaved();
     }
 
     public IDocument CreateNewDocument() => new Document();

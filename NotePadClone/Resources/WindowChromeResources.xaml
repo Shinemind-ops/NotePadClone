@@ -146,7 +146,7 @@
                 Value="{Binding Path=DataContext.CloseWindowCommand, RelativeSource={RelativeSource TemplatedParent}}" />
 
         <Setter Property="ToolTip"
-                Value="Close" />
+                Value="關閉" />
 
         <Setter Property="Margin"
                 Value="0" />
@@ -164,7 +164,7 @@
                 Value="{Binding Path=DataContext.MaximizeWindowCommand, RelativeSource={RelativeSource TemplatedParent}}" />
 
         <Setter Property="ToolTip"
-                Value="Maximize" />
+                Value="最大化" />
 
         <Setter Property="ContentTemplate"
                 Value="{StaticResource WindowMaximizeIconTemplate}" />
@@ -191,7 +191,7 @@
                 Value="{Binding Path=DataContext.RestoreWindowCommand, RelativeSource={RelativeSource TemplatedParent}}" />
 
         <Setter Property="ToolTip"
-                Value="Restore" />
+                Value="還原" />
 
         <Setter Property="ContentTemplate"
                 Value="{StaticResource WindowRestoreIconTemplate}" />
@@ -218,7 +218,7 @@
                 Value="{Binding Path=DataContext.MinimizeWindowCommand, RelativeSource={RelativeSource TemplatedParent}}" />
 
         <Setter Property="ToolTip"
-                Value="Minimize" />
+                Value="最小化" />
 
         <Setter Property="ContentTemplate"
                 Value="{StaticResource WindowMinimizeIconTemplate}" />

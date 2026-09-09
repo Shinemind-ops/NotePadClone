@@ -24,10 +24,6 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Reference Include="WpfEssentials">
-      <HintPath>..\..\WpfEssentials\WpfEssentials\bin\Debug\net8.0-windows\WpfEssentials.dll</HintPath>
-    </Reference>
-  </ItemGroup>
+  <!-- 原 WpfEssentials 外部引用已移除（作者倉庫 404），改由 WpfEssentialsShim.cs 本地實作 -->
 
 </Project>

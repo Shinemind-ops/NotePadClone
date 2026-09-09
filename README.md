@@ -1,55 +1,39 @@
-# NotePad Clone
-#### About
-Notepad Clone is a modern reimagining of the classic Windows Notepad application, specifically tailored to mimic the Windows 11 version. This project was developed to enhance my software development skills, showcasing a blend of traditional text editing with a contemporary, user-friendly interface. Designed primarily for Windows 10 users, it offers a visually appealing alternative to the bright and simplistic native Notepad, with a dark and bright theme for a more comfortable user experience.
+# NotePadClone — Traditional-Chinese Enhanced Fork
 
-**!!! Project currently on hold !!!**
+A fork of [thomaswening/NotePadClone](https://github.com/thomaswening/NotePadClone) — the modern Windows-11-style Notepad reimagining — taken further for daily professional use: rendered Markdown viewing, a file-explorer sidebar, line numbers, a fully localized Traditional-Chinese UI, and a set of real-world reliability fixes (most notably: **copying never freezes the UI**, even when third-party clipboard software stalls the Windows clipboard chain).
 
-![image](https://github.com/thomaswening/NotePadClone/assets/25326391/d80fba4b-cfa5-4307-863b-bedfa73543e2)
+## Modifications in this fork
 
-#### Dependencies
-- `MaterialDesignColors` (Version 2.1.4)
-- `MaterialDesignThemes` (Version 4.9.0)
-- `WpfEssentials`: This is a custom dependency. The repository can be found at [WpfEssentials GitHub Repo](https://github.com/thomaswening/WpfEssentials). Please follow the build instructions in the repository's README to compile the library and add the resulting DLL as a reference or include the project as a shared project in the solution.
+| Area | What changed | Why |
+|---|---|---|
+| Markdown viewing | `.md` files render as formatted documents (headings, tables, code) with a per-document Browse/Edit toggle; tables get their own horizontal scrollbars | Read rendered Markdown without leaving Notepad; wide tables no longer stretch the window |
+| File explorer sidebar | Open-folder, right-click menu (set as root / refresh / reveal), `FileSystemWatcher` auto-refresh, remembers last root | Quick navigation between notes in a folder |
+| Line numbers | Status-bar toggle; custom virtualized gutter (`GetRectFromCharacterIndex`); auto-widens with digit count; hidden in Markdown browse mode; persisted | Code editing; also fixes stock-gutter offset bugs on wrapped/long documents |
+| Clipboard: non-blocking copy | All clipboard writes go through a dedicated STA worker thread with bounded retries and liveness probing; WPF's built-in `Copy` command is routed through it too | Windows requires releasing clipboard ownership before a new write; a third-party clipboard consumer (sync tools, IME cloud clipboard) holding the chain froze the UI ~0.5s per copy. Now the UI never blocks on copy |
+| Cut latency | Clipboard write dispatched off the render path | 0.4s visual lag after Ctrl+X |
+| Open-with / CLI | Startup reads `e.Args` and opens the file through the live window; a pristine untitled tab auto-closes | "Open with → this editor" from Explorer works |
+| Unsaved-changes prompt | Dialog before closing a dirty document; untitled+empty windows close silently | No silent data loss, no nagging |
+| Word wrap & path bar | Menu options; path bar with one-click copy of the full path | Daily QoL |
+| Status-bar toggle groups | Four toggles (dark / sidebar / browse / line numbers), each label hugging its own switch (4px) with 1px theme-colored dividers between groups | Proximity ambiguity: it was unclear which label belonged to which switch |
+| Traditional-Chinese UI | Menus, dialogs, tooltips fully localized | Primary users are TC-Chinese readers |
+| Self-contained build | In-repo shim replaces upstream's external `WpfEssentials` DLL requirement | Upstream needs a companion repo built by hand before compiling; here `dotnet build` just works |
 
-#### Building the Project
-1. **Prerequisites**:
-   - .NET 8.0 SDK.
-   - Visual Studio 2022 or later.
+## Building
 
-2. **Clone and Setup**:
-   - Clone this repository to your local machine.
-   - Clone the [WpfEssentials repository](https://github.com/thomaswening/WpfEssentials), build it, and add it to the solution as mentioned above.
+Prerequisites: .NET 8 SDK only.
 
-3. **Restore NuGet Packages**:
-   - Open the solution in Visual Studio.
-   - Restore NuGet packages.
+```
+dotnet build NotePadClone.sln -c Release
+dotnet test NotePadClone.sln -c Release        # 12 unit tests
+```
 
-4. **Build and Run**:
-   - Set NotepadClone as the startup project.
-   - Build and run the application with F5 or "Start".
+Run: `NotePadClone/bin/Release/net8.0-windows/NotePadClone.exe`
 
-#### Features
-- Clone of the Windows 11 Notepad for Windows 10 users.
-- Toggle to switch between light and dark theme.
-- Basic text editing functions: open, edit, and save documents.
-- StatusBar with document statistics.
-- Custom window chrome to resemble Windows 11 style.
-- Developed using MVVM architecture for maintainability.
-- Tabs to open several files in the same window.
+## Documentation
 
-#### Planned features 
-- *Unit tests! Because, let's be neat and tidy.*
-- More items on the menu bar, e.g. Edit, View, ...
-- Editing features: Search, replacem, undo/redo, copy, cut, paste, select all, find, find next/previous.
-- Functionality that keeps the last open documents if they have not yet been saved before the window is closed.
-- Saving documents improvements: Autosave, warning dialog when closing documents with unsaved changes.
-- Saving and opening different file types/
-- Opening several documents at once.
-- Status bar improvements: cursor position, zoom, line ending, encoding.
-- Drag & drop for tabs.
-- An icon for the whole thing - maybe a unicorn? :D
-- Possibly an alternative UI based on WinUI 3.0 but I will first have to learn using that technology.
-- Whatever useful comes to mind.
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — project layout and key flows
+- [CONTRIBUTING.md](CONTRIBUTING.md) — setup, conventions, PR checklist
 
 ## License
-This project is licensed under the GPL-3.0 License - see the [LICENSE](LICENSE.txt) file for details.
+
+MIT (same as upstream). Original author: Thomas Wening. See [LICENSE.txt](LICENSE.txt).

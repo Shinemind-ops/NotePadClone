@@ -14,7 +14,7 @@
         <valueConverter:IntToStringConverter x:Key="IntToStringConverter" />
     </UserControl.Resources>
 
-    <DockPanel Grid.Row="2"
+    <DockPanel LastChildFill="False"
                HorizontalAlignment="Right"
                VerticalAlignment="Center"
                Margin="5">
@@ -37,28 +37,104 @@
             </Style>
         </DockPanel.Resources>
 
-        <TextBlock Style="{StaticResource Left}"
-                   Text="File Size: " />
+        <!-- Left group: existing info display + dark-mode toggle -->
+        <StackPanel DockPanel.Dock="Left"
+                    Orientation="Horizontal"
+                    VerticalAlignment="Center">
 
-        <TextBlock Style="{StaticResource Right}"
-                   Text="{Binding Document.Metadata.FileSizeInBytes, Converter={StaticResource FileSizeConverter}}" />
+            <TextBlock Style="{StaticResource Left}"
+                       Text="檔案大小: " />
 
-        <TextBlock Style="{StaticResource Left}"
-                   Text="Characters: " />
+            <TextBlock Style="{StaticResource Right}"
+                       Text="{Binding Document.Metadata.FileSizeInBytes, Converter={StaticResource FileSizeConverter}}" />
 
-        <TextBlock Style="{StaticResource Right}"
-                   Text="{Binding Document.Metadata.NumberOfCharacters, Converter={StaticResource IntToStringConverter}, ConverterParameter=N0}" />
+            <TextBlock Style="{StaticResource Left}"
+                       Text="字元: " />
 
-        <TextBlock Style="{StaticResource Left}"
-                   Text="Lines: " />
+            <TextBlock Style="{StaticResource Right}"
+                       Text="{Binding Document.Metadata.NumberOfCharacters, Converter={StaticResource IntToStringConverter}, ConverterParameter=N0}" />
 
-        <TextBlock Style="{StaticResource Right}"
-                   Text="{Binding Document.Metadata.NumberOfLines}" />
+            <TextBlock Style="{StaticResource Left}"
+                       Text="行數: " />
 
-        <TextBlock Style="{StaticResource Left}"
-                   Text="Dark Mode " />
+            <TextBlock Style="{StaticResource Right}"
+                       Text="{Binding Document.Metadata.NumberOfLines}" />
 
-        <ToggleButton Margin="5 0"
-                      IsChecked="{Binding IsDarkTheme, Mode=TwoWay}" />
+            <!-- CC-107b: tight labels + vertical dividers. Rule: each label hugs its own toggle within 4px,
+                 and each toggle group is bracketed by 1px dividers — zero ownership ambiguity. -->
+            <Border Width="1" Height="16" Margin="10 0 0 0" Opacity="0.35"
+                    VerticalAlignment="Center"
+                    Background="{DynamicResource MaterialDesignBody}" />
+
+            <TextBlock Style="{StaticResource Left}"
+                       Text="深色模式"
+                       Margin="10 0 4 0" />
+
+            <ToggleButton Margin="0 0 10 0"
+                          VerticalAlignment="Center"
+                          AutomationProperties.Name="深色模式開關"
+                          IsChecked="{Binding IsDarkTheme, Mode=TwoWay}" />
+        </StackPanel>
+
+        <!-- Right group: v1.2 mod additions — browse-mode switch, file-tree sidebar toggle, v1.3 line-number toggle.
+             v1.4 rebuild: the three switches now follow the same visual language as the "Dark Mode" toggle —
+             "TextBlock label (theme foreground color, 13px SemiBold) + standard MaterialDesign ToggleButton".
+             The old custom content (PackIcon + TextBlock) had FontSize/Foreground swallowed by the MaterialDesign template;
+             when Checked the whole button turned purple — purple text on purple = invisible camouflage. After the rebuild the text always uses the theme foreground
+             (white in dark mode / dark in light mode), readable in any state; on/off is conveyed purely by the switch color (purple thumb). -->
+        <StackPanel DockPanel.Dock="Right"
+                    Orientation="Horizontal"
+                    VerticalAlignment="Center">
+
+            <!-- CC-107c: divider between the left group (dark mode) and right group (sidebar) across StackPanels -->
+            <Border Width="1" Height="16" Margin="0 0 0 0" Opacity="0.35"
+                    VerticalAlignment="Center"
+                    Background="{DynamicResource MaterialDesignBody}" />
+
+            <TextBlock Text="側欄"
+                       FontSize="13"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource MaterialDesignBody}"
+                       Margin="10 0 4 0"
+                       VerticalAlignment="Center" />
+            <ToggleButton Margin="0"
+                          VerticalAlignment="Center"
+                          AutomationProperties.Name="側欄開關"
+                          IsChecked="{Binding ShowSidePanel, Mode=TwoWay}"
+                          ToolTip="顯示 / 隱藏左側文件列表" />
+
+            <Border Width="1" Height="16" Margin="10 0 0 0" Opacity="0.35"
+                    VerticalAlignment="Center"
+                    Background="{DynamicResource MaterialDesignBody}" />
+
+            <TextBlock Text="瀏覽 / 編輯"
+                       FontSize="13"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource MaterialDesignBody}"
+                       Margin="10 0 4 0"
+                       VerticalAlignment="Center" />
+            <ToggleButton Margin="0"
+                          VerticalAlignment="Center"
+                          AutomationProperties.Name="瀏覽模式開關"
+                          IsChecked="{Binding SelectedDocument.IsBrowseMode, Mode=TwoWay}"
+                          IsEnabled="{Binding SelectedDocument.IsMarkdown}"
+                          ToolTip="瀏覽模式：將 Markdown 渲染成預覽；編輯模式：直接改原始文字。僅 .md / .markdown 文件適用。" />
+
+            <Border Width="1" Height="16" Margin="10 0 0 0" Opacity="0.35"
+                    VerticalAlignment="Center"
+                    Background="{DynamicResource MaterialDesignBody}" />
+
+            <TextBlock Text="行號"
+                       FontSize="13"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource MaterialDesignBody}"
+                       Margin="10 0 4 0"
+                       VerticalAlignment="Center" />
+            <ToggleButton Margin="0 0 10 0"
+                          VerticalAlignment="Center"
+                          AutomationProperties.Name="行號開關"
+                          IsChecked="{Binding ShowLineNumbers, Mode=TwoWay}"
+                          ToolTip="行號：在編輯模式下顯示每行行號，方便寫程式。僅編輯模式生效，MD 瀏覽模式自動隱藏。" />
+        </StackPanel>
     </DockPanel>
 </UserControl>

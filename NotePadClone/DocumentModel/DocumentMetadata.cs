@@ -16,7 +16,7 @@ namespace NotePadClone.DocumentModel;
 /// </summary>
 public class DocumentMetadata : ObservableObject
 {
-    private const string TitleUntitled = "Untitled";
+    private const string TitleUntitled = "未命名";
     private const string visibleCharactersRegexStr = @"[^\p{Cc}^\p{Cn}^\p{Cs}]";
 
     public string? _filePath;
@@ -40,8 +40,18 @@ public class DocumentMetadata : ObservableObject
     public string Title
     {
         get => _title;
-        set => SetField(ref _title, value);
+        set
+        {
+            if (!SetField(ref _title, value))
+                return;
+
+            // Keep the owning document's tab label in sync when the title changes.
+            TitleChanged?.Invoke(this, EventArgs.Empty);
+        }
     }
+
+    /// <summary>Raised when the title changes so the document can refresh its display name.</summary>
+    public event EventHandler? TitleChanged;
 
     public int NumberOfCharacters
     {

@@ -9,44 +9,53 @@
              d:DesignHeight="25" d:DesignWidth="800">
     
     <Menu materialDesign:MenuAssist.TopLevelMenuItemHeight="25">
-        <MenuItem Header="_File">
+        <MenuItem Header="檔案(_F)">
             <MenuItem Command="{Binding OpenNewTabCommand}"
-                      Header="_New tab"
+                      Header="新分頁(_N)"
                       InputGestureText="Ctrl+N" />
-            
+
             <MenuItem Command="{Binding OpenNewWindowCommand}"
-                      Header="New _window"
+                      Header="新視窗(_W)"
                       InputGestureText="Ctrl+Shift+N" />
 
             <MenuItem Command="{Binding OpenDocumentCommand}"
-                      Header="_Open"
+                      Header="開啟(_O)"
                       InputGestureText="Ctrl+O" />
 
             <MenuItem Command="{Binding SaveDocumentCommand}"
-                      Header="_Save"
+                      Header="儲存(_S)"
                       InputGestureText="Ctrl+S" />
 
             <MenuItem Command="{Binding SaveDocumentAsCommand}"
-                      Header="Save _as"
+                      Header="另存新檔(_A)"
                       InputGestureText="Ctrl+Shift+S" />
 
             <MenuItem Command="{Binding SaveOpenDocumentsCommand}"
-                      Header="Save a_ll"
+                      Header="全部儲存(_L)"
                       InputGestureText="Ctrl+Alt+S" />
 
             <Separator />
 
             <MenuItem Command="{Binding CloseTabCommand}"
-                      Header="_Close tab"
+                      Header="關閉分頁(_C)"
                       InputGestureText="Ctrl+W" />
-            
+
             <MenuItem Command="{Binding CloseWindowCommand}"
-                      Header="Clos_e window"
+                      Header="關閉視窗(_E)"
                       InputGestureText="Ctrl+Shift+W" />
 
             <MenuItem Command="{Binding ExitApplicationCommand}"
-                      Header="E_xit" />
+                      Header="結束(_X)" />
         </MenuItem>
-        <!-- Additional Menu Items Here -->
+        <!-- Mod addition: View menu -->
+        <MenuItem Header="檢視(_V)">
+            <MenuItem Header="自動換行(_W)"
+                      IsCheckable="True"
+                      IsChecked="{Binding WordWrapEnabled, Mode=TwoWay}" />
+
+            <MenuItem Header="顯示文件路徑列(_P)"
+                      IsCheckable="True"
+                      IsChecked="{Binding ShowPathBar, Mode=TwoWay}" />
+        </MenuItem>
     </Menu>
 </UserControl>
