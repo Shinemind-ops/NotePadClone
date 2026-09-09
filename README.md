@@ -36,4 +36,4 @@ Run: `NotePadClone/bin/Release/net8.0-windows/NotePadClone.exe`
 
 ## License
 
-MIT (same as upstream). Original author: Thomas Wening. See [LICENSE.txt](LICENSE.txt).
+GPL-3.0 (same as upstream — this fork stays under GPLv3). Original code: Thomas Wening. See [LICENSE.txt](LICENSE.txt).
